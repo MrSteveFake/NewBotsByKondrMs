@@ -1,0 +1,42 @@
+name: Extract ZIP Archive
+
+on:
+  push:
+    paths:
+      - '*.zip'
+  workflow_dispatch:
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Extract ZIP archive
+        run: |
+          # Найти все ZIP файлы в корне репозитория
+          zip_files=$(find . -maxdepth 1 -name "*.zip" -type f)
+          
+          if [ -z "$zip_files" ]; then
+            echo "No ZIP files found"
+            exit 1
+          fi
+          
+          # Распаковать каждый найденный ZIP файл
+          for zip_file in $zip_files; do
+            echo "Extracting: $zip_file"
+            # Распаковываем в директорию с именем архива (без расширения)
+            dirname="${zip_file%.zip}"
+            mkdir -p "extracted/$dirname"
+            unzip -o "$zip_file" -d "extracted/$dirname"
+          done
+          
+          echo "All archives extracted successfully"
+      
+      - name: Upload extracted files
+        uses: actions/upload-artifact@v4
+        with:
+          name: extracted-files
+          path: extracted/
