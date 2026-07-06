@@ -16,24 +16,48 @@ jobs:
       
       - name: Extract ZIP archive
         run: |
-          # Найти все ZIP файлы в корне репозитория
+          # Показать все файлы в репозитории для отладки
+          echo "📁 Repository contents:"
+          ls -la
+          echo ""
+          
+          # Найти только ZIP файлы (исключая директории)
           zip_files=$(find . -maxdepth 1 -name "*.zip" -type f)
           
+          echo "🔍 Found ZIP files:"
+          echo "$zip_files"
+          echo ""
+          
           if [ -z "$zip_files" ]; then
-            echo "No ZIP files found"
-            exit 1
+            echo "❌ No ZIP files found in root directory"
+            echo "Trying recursive search..."
+            zip_files=$(find . -type f -name "*.zip")
+            if [ -z "$zip_files" ]; then
+              echo "❌ No ZIP files found anywhere"
+              exit 1
+            fi
           fi
           
           # Распаковать каждый найденный ZIP файл
           for zip_file in $zip_files; do
-            echo "Extracting: $zip_file"
-            # Распаковываем в директорию с именем архива (без расширения)
-            dirname="${zip_file%.zip}"
-            mkdir -p "extracted/$dirname"
-            unzip -o "$zip_file" -d "extracted/$dirname"
+            echo "📦 Processing: $zip_file"
+            
+            # Получаем базовое имя файла без пути и расширения
+            filename=$(basename "$zip_file" .zip)
+            echo "  Archive name: $filename"
+            
+            # Создаем директорию для распаковки
+            mkdir -p "extracted"
+            
+            # Распаковываем напрямую в extracted/
+            unzip -o "$zip_file" -d "extracted/"
+            
+            echo "  ✅ Extracted successfully"
+            echo ""
           done
           
-          echo "All archives extracted successfully"
+          echo "📋 Extracted contents:"
+          ls -la extracted/ | head -20
       
       - name: Upload extracted files
         uses: actions/upload-artifact@v4
